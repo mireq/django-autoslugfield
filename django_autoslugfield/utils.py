@@ -18,8 +18,8 @@ def get_default_manager(obj):
 		return getattr(obj.__class__, "_default_manager")
 
 
-def unique_slugify(instance, slug_field, reserve_chars=5, title_field=None, filter_fields=()):
-	slug = getattr(instance, slug_field)
+def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None, filter_fields=()):
+	slug = getattr(instance, slug_field_name)
 	if not slug:
 		if title_field:
 			slug = slugify(getattr(instance, title_field))
@@ -28,21 +28,21 @@ def unique_slugify(instance, slug_field, reserve_chars=5, title_field=None, filt
 
 	if not slug:
 		slug = '-'
-	slug_field = get_meta(instance).get_field(slug_field)
+	slug_field = get_meta(instance).get_field(slug_field_name)
 	slug_length = slug_field.max_length
 	slug = slug[:slug_length - reserve_chars]
 
 	queryset = get_default_manager(instance).all()
 	if instance.pk:
 		queryset = queryset.exclude(pk = instance.pk)
-	slug_field_query = slug_field + '__startswith'
+	slug_field_query = slug_field_name + '__startswith'
 
 	filter_fields = dict([(f, getattr(instance, f)) for f in filter_fields])
 	filter_fields[slug_field_query] = slug
 
-	all_slugs = set(queryset.filter(**filter_fields).values_list(slug_field, flat = True)) # pylint: disable=star-args
+	all_slugs = set(queryset.filter(**filter_fields).values_list(slug_field_name, flat=True)) # pylint: disable=star-args
 	max_val = 10 ** (reserve_chars - 1) - 1
-	setattr(instance, slug_field, create_unique_slug(slug, all_slugs, max_val))
+	setattr(instance, slug_field_name, create_unique_slug(slug, all_slugs, max_val))
 
 
 def create_unique_slug(slug, all_slugs, max_val):
