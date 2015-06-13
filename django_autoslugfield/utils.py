@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import inspect
+
+from django.template.defaultfilters import slugify
+from django.utils.encoding import smart_unicode
+
 
 def get_meta(instance):
 	return getattr(instance, "_meta")
