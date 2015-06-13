@@ -2,10 +2,8 @@
 from __future__ import unicode_literals
 
 from django.db.models import signals, SlugField
-from django.template.defaultfilters import slugify
-from django.utils.encoding import smart_unicode
 
-from common_utils import get_meta, get_default_manager
+from .utils import unique_slugify
 
 
 class AutoSlugField(SlugField):
@@ -19,39 +17,5 @@ class AutoSlugField(SlugField):
 		signals.pre_save.connect(self.unique_slugify, sender=cls)
 		super(AutoSlugField, self).contribute_to_class(cls, name, virtual_only)
 
-	def unique_slugify(self, instance, **kwargs):
-		slug = getattr(instance, self.name)
-		if not slug:
-			if self.title_field:
-				slug = slugify(getattr(instance, self.title_field))
-			else:
-				slug = slugify(smart_unicode(instance))
-
-		if not slug:
-			slug = '-'
-		slug_field = get_meta(instance).get_field(self.name)
-		slug_length = slug_field.max_length
-		slug = slug[:slug_length - self.reserve_chars]
-
-		queryset = get_default_manager(instance).all()
-		if instance.pk:
-			queryset = queryset.exclude(pk = instance.pk)
-		slug_field_query = self.name + '__startswith'
-
-		filter_fields = dict([(f, getattr(instance, f)) for f in self.filter_fields])
-		filter_fields[slug_field_query] = slug
-
-		all_slugs = set(queryset.filter(**filter_fields).values_list(self.name, flat = True)) # pylint: disable=star-args
-		max_val = 10 ** (self.reserve_chars - 1) - 1
-		setattr(instance, self.name, self.create_unique_slug(slug, all_slugs, max_val))
-
-	@staticmethod
-	def create_unique_slug(slug, all_slugs, max_val):
-		if not slug in all_slugs:
-			return slug
-		else:
-			for suffix in xrange(2, max_val):
-				new_slug = slug + '-' + str(suffix)
-				if not new_slug in all_slugs:
-					return new_slug
-		return slug
+	def unique_slugify(self, instance, **kwargs): #pylint: disable=unused-argument
+		return unique_slugify(instance, self.name, self.reserve_chars, self.title_field, self.filter_fields)
