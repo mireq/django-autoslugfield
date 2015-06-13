@@ -13,7 +13,7 @@ def get_default_manager(obj):
 		return getattr(obj.__class__, "_default_manager")
 
 
-def unique_slugify(self, instance, slug_field, reserve_chars=5, title_field=None, filter_fields=()):
+def unique_slugify(instance, slug_field, reserve_chars=5, title_field=None, filter_fields=()):
 	slug = getattr(instance, slug_field)
 	if not slug:
 		if title_field:
