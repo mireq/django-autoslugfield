@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import inspect
 
 from django.template.defaultfilters import slugify
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import force_text
 
 
 def get_meta(instance):
@@ -24,7 +24,7 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 		if title_field:
 			slug = slugify(getattr(instance, title_field))
 		else:
-			slug = slugify(smart_unicode(instance))
+			slug = slugify(force_text(instance))
 
 	if not slug:
 		slug = '-'
