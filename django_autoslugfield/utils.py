@@ -49,7 +49,7 @@ def create_unique_slug(slug, all_slugs, max_val):
 	if not slug in all_slugs:
 		return slug
 	else:
-		for suffix in xrange(2, max_val):
+		for suffix in range(2, max_val):
 			new_slug = slug + '-' + str(suffix)
 			if not new_slug in all_slugs:
 				return new_slug
