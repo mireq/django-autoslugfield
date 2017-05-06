@@ -18,7 +18,7 @@ def get_default_manager(obj):
 		return getattr(obj.__class__, "_default_manager")
 
 
-def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None, filter_fields=()):
+def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None, in_respect_to=()):
 	slug = getattr(instance, slug_field_name)
 	if not slug:
 		if title_field:
@@ -37,10 +37,10 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 		queryset = queryset.exclude(pk = instance.pk)
 	slug_field_query = slug_field_name + '__startswith'
 
-	filter_fields = dict([(f, getattr(instance, f)) for f in filter_fields])
-	filter_fields[slug_field_query] = slug
+	in_respect_to = dict([(f, getattr(instance, f)) for f in in_respect_to])
+	in_respect_to[slug_field_query] = slug
 
-	all_slugs = set(queryset.filter(**filter_fields).values_list(slug_field_name, flat=True)) # pylint: disable=star-args
+	all_slugs = set(queryset.filter(**in_respect_to).values_list(slug_field_name, flat=True)) # pylint: disable=star-args
 	max_val = 10 ** (reserve_chars - 1) - 1
 	setattr(instance, slug_field_name, create_unique_slug(slug, all_slugs, max_val))
 
