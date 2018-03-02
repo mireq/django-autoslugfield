@@ -19,3 +19,12 @@ class AutoSlugField(SlugField):
 
 	def unique_slugify(self, instance, **kwargs): #pylint: disable=unused-argument
 		return unique_slugify(instance, self.name, self.reserve_chars, self.title_field, self.in_respect_to)
+
+	def deconstruct(self):
+		name, path, args, kwargs = super().deconstruct()
+		kwargs['title_field'] = self.title_field
+		if self.reserve_chars != 5:
+			kwargs['reserve_chars'] = self.reserve_chars
+		if self.in_respect_to:
+			kwargs['in_respect_to'] = self.in_respect_to
+		return name, path, args, kwargs
