@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.template.defaultfilters import slugify
 from django.utils.encoding import force_text
+from django.utils.text import slugify
 
 
 def get_title(instance, title_field=None):
