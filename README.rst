@@ -33,7 +33,7 @@ Basic example
 		title = models.CharField(max_length=255)
 		slug = AutoSlugField(max_length=255, unique=True)
 
-Slug is created from `__unicode__` method. If another object with same slug
+Slug is created from `__str__` method. If another object with same slug
 already exists slug will be suffixed with number.
 
 Advanced usage
@@ -42,8 +42,9 @@ Advanced usage
 AutoSlugField arguments are:
 
 * `reserve_chars` - number of characters reserved for suffix
-* `title_field` - use specific field instread of `__unicode__` method
-* `filter_fields` - fields under witch is model always filterd eg.
+* `title_field` - use specific field instread of `__str__` method
+* `in_respect_to` - generate unique slug for specific subset of fields (or not
+    unique when in_respect_to contains pk)
 
 .. code:: python
 

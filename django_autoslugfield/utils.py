@@ -24,6 +24,9 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	slug_length = slug_field.max_length
 	slug = slug[:slug_length - reserve_chars]
 
+	if 'pk' in in_respect_to:
+		return slug
+
 	queryset = instance.__class__._default_manager.all()
 	if instance.pk:
 		queryset = queryset.exclude(pk=instance.pk)
