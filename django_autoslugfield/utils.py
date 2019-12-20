@@ -12,6 +12,16 @@ def get_title(instance, title_field=None):
 		return force_text(instance)
 
 
+def get_instance_attribute(instance, attribute):
+	lookups = attribute.split('__')
+	attribute = instance
+	for lookup in lookups:
+		attribute = getattr(attribute, lookup)
+		if attribute is None:
+			break
+	return attribute
+
+
 def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None, in_respect_to=()):
 	slug = getattr(instance, slug_field_name)
 	if not slug:
@@ -32,7 +42,7 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 		queryset = queryset.exclude(pk=instance.pk)
 	slug_field_query = slug_field_name + '__startswith'
 
-	in_respect_to = {f: getattr(instance, f) for f in in_respect_to}
+	in_respect_to = {f: get_instance_attribute(instance, f) for f in in_respect_to}
 	in_respect_to[slug_field_query] = slug
 
 	all_slugs = set(queryset.filter(**in_respect_to).values_list(slug_field_name, flat=True))
