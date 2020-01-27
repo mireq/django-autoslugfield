@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.text import slugify
 
 
 def get_title(instance, title_field=None):
 	if title_field:
-		return force_text(getattr(instance, title_field))
+		return force_str(getattr(instance, title_field))
 	else:
-		return force_text(instance)
+		return force_str(instance)
 
 
 def get_instance_attribute(instance, attribute):
