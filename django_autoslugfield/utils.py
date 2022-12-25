@@ -2,10 +2,27 @@
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.encoding import force_str
 from django.utils.text import slugify
+from django.db.models import F, Value as V, Case, When, Q
+from django.db.models.functions import Length, RowNumber, Concat, Cast
+from django.db.models.expressions import Window
+from django.db import models
+import re
 
 
 EMPTY_SLUG = '-'
 SEPARATOR = '-'
+
+ESCAPE_REGEX = re.compile(r'([.\\+*^?$!=|:-\[\](){}<>-])')
+
+
+def regex_escape(text):
+	"""
+	This function escapes lesss chars, it's used to query database, which don't
+	support all escape sequencies.
+	"""
+	text = ESCAPE_REGEX.sub(r'\\\1', text)
+	text = text.replace('\000', '\\000')
+	return text
 
 
 def get_title(instance, title_field=None):
@@ -78,10 +95,30 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	if instance.pk:
 		queryset = queryset.exclude(pk=instance.pk)
 
-	slug_field_query = slug_field_name + '__startswith'
+	# construct regex query
+	slug_regex = f'^{regex_escape(slug)}({regex_escape(SEPARATOR)}[0-9]+)?$'
+	slug_field_query = slug_field_name + '__regex'
 
+	# construct in_respect_to filters
 	in_respect_to = {f: get_instance_attribute(instance, f) for f in in_respect_to}
-	in_respect_to[slug_field_query] = slug
+	in_respect_to[slug_field_query] = slug_regex
+
+	# find gap
+	print(queryset
+		.filter(**in_respect_to)
+		.annotate(row_number_=Window(
+			expression=RowNumber(),
+			order_by=[Length(slug_field_name), slug_field_name]
+		) - V(1))
+		.annotate(expected_slug=Case(
+				When(Q(row_number_=0), then=V(slug)),
+				default=Concat(V(slug), V(SEPARATOR), Cast(F('row_number_'), models.CharField(max_length=255)))
+			)
+		)
+		.order_by(Length(slug_field_name), slug_field_name)
+		.exclude(slug=F('expected_slug'))
+		.values_list('slug', 'expected_slug', 'row_number_')
+	)
 
 	all_slugs = set(queryset.filter(**in_respect_to).values_list(slug_field_name, flat=True))
 	max_val = 10 ** (reserve_chars - 1) - 1

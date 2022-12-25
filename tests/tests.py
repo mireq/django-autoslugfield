@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.test import TestCase
 from .models import SimpleModel, CustomTitleModel, RespectToPkModel, RespectToParentModel, RespectToUniqueTogether
-from django_autoslugfield.utils import EMPTY_SLUG, SEPARATOR
+from django_autoslugfield.utils import EMPTY_SLUG, SEPARATOR, regex_escape
 
 
 class TestField(TestCase):
@@ -62,3 +62,16 @@ class TestField(TestCase):
 		self.assertEqual('title', instance.slug)
 		instance = RespectToUniqueTogether.objects.create(title='title', a='', b='1')
 		self.assertEqual('title', instance.slug)
+
+	def test_find_gap(self):
+		instances = [
+			SimpleModel(title='s', slug='s'),
+			SimpleModel(title='s', slug='s-1'),
+			SimpleModel(title='s', slug='s-111'),
+			SimpleModel(title='s', slug='s-2'),
+			SimpleModel(title='s', slug='s-4'),
+		]
+		SimpleModel.objects.bulk_create(instances)
+		instance = SimpleModel.objects.create(title='s')
+		print(instance.slug)
+		print(SimpleModel.objects.values_list('slug', flat=True))
