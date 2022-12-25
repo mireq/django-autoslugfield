@@ -45,3 +45,7 @@ class RespectToUniqueTogether(ModelBase):
 class RespectToParentModel(ModelBase):
 	parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
 	slug = AutoSlugField(max_length=10, in_respect_to=('parent__slug',))
+
+
+class CustomReserveModel(ModelBase):
+	slug = AutoSlugField(max_length=10, reserve_chars=2, unique=True)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.test import TestCase
 
-from .models import SimpleModel, CustomTitleModel, RespectToPkModel, RespectToParentModel, RespectToUniqueTogether
+from .models import SimpleModel, CustomTitleModel, RespectToPkModel, RespectToParentModel, RespectToUniqueTogether, CustomReserveModel
 from django_autoslugfield.utils import EMPTY_SLUG, SEPARATOR
 
 
@@ -82,3 +82,7 @@ class TestField(TestCase):
 		instance = SimpleModel.objects.create(title='title')
 		instance.save()
 		self.assertEqual('title', instance.slug)
+
+	def test_custom_reserve(self):
+		instance = CustomReserveModel.objects.create(title='0123456789')
+		self.assertEqual('01234567', instance.slug)
