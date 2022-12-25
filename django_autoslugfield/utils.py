@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.db.models.constants import LOOKUP_SEP
 from django.utils.encoding import force_str
 from django.utils.text import slugify
 
@@ -11,7 +12,7 @@ def get_title(instance, title_field=None):
 
 
 def get_instance_attribute(instance, attribute):
-	lookups = attribute.split('__')
+	lookups = attribute.split(LOOKUP_SEP)
 	attribute = instance
 	for lookup in lookups:
 		attribute = getattr(attribute, lookup)
