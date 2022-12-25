@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+import re
+
+from django.db import models
+from django.db.models import F, Value as V, Case, When, Q
 from django.db.models.constants import LOOKUP_SEP
+from django.db.models.expressions import Window
+from django.db.models.functions import Length, RowNumber, Concat, Cast
 from django.utils.encoding import force_str
 from django.utils.text import slugify
-from django.db.models import F, Value as V, Case, When, Q
-from django.db.models.functions import Length, RowNumber, Concat, Cast
-from django.db.models.expressions import Window
-from django.db import models
-import re
 
 
 EMPTY_SLUG = '-'
@@ -71,6 +72,14 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	# get current slug
 	slug = getattr(instance, slug_field_name)
 
+	# get queryset
+	model = instance.__class__
+	queryset = model._default_manager.all()
+
+	# preserve saved slug
+	if instance.pk and queryset.filter(**{slug_field_name: slug, 'pk': instance.pk}):
+		return slug
+
 	# if there is not slug, generate new
 	if not slug:
 		slug = slugify(get_title(instance, title_field))
@@ -85,15 +94,9 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	slug = slug[:slug_length - reserve_chars]
 
 	# if in_respect_to is unique, don't need to generate unique slug
-	model = instance.__class__
 	if is_unique(model, in_respect_to):
 		setattr(instance, slug_field_name, slug)
 		return slug
-
-	# exclude current model
-	queryset = model._default_manager.all()
-	if instance.pk:
-		queryset = queryset.exclude(pk=instance.pk)
 
 	# construct regex query
 	slug_regex = f'^{regex_escape(slug)}({regex_escape(SEPARATOR)}[0-9]+)?$'
@@ -103,34 +106,41 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	in_respect_to = {f: get_instance_attribute(instance, f) for f in in_respect_to}
 	in_respect_to[slug_field_query] = slug_regex
 
-	# find gap
-	print(queryset
+	# search for gaps (filter is not possible with window functions)
+	all_slugs = (queryset
 		.filter(**in_respect_to)
 		.annotate(row_number_=Window(
 			expression=RowNumber(),
 			order_by=[Length(slug_field_name), slug_field_name]
-		) - V(1))
-		.annotate(expected_slug=Case(
-				When(Q(row_number_=0), then=V(slug)),
-				default=Concat(V(slug), V(SEPARATOR), Cast(F('row_number_'), models.CharField(max_length=255)))
+		))
+		.annotate(expected_slug_=Case(
+				When(Q(row_number_=1), then=V(slug)),
+				default=Concat(
+					V(slug),
+					V(SEPARATOR),
+					Cast(F('row_number_'), models.CharField(max_length=255))
+				)
 			)
 		)
-		.order_by(Length(slug_field_name), slug_field_name)
-		.exclude(slug=F('expected_slug'))
-		.values_list('slug', 'expected_slug', 'row_number_')
+		.annotate(is_slug_gap=Case(
+			When(Q(**{slug_field_name: F('expected_slug_')}), then=V(False)),
+			default=V(True)
+		))
+		.values_list('expected_slug_', 'row_number_', 'is_slug_gap')
 	)
 
-	all_slugs = set(queryset.filter(**in_respect_to).values_list(slug_field_name, flat=True))
-	max_val = 10 ** (reserve_chars - 1) - 1
-	setattr(instance, slug_field_name, create_unique_slug(slug, all_slugs, max_val))
-
-
-def create_unique_slug(slug, all_slugs, max_val):
-	unique_slug = slug
-	suffix = 2
-	while unique_slug in all_slugs:
-		unique_slug = '%s-%d' % (slug, suffix)
-		suffix += 1
-		if suffix > max_val:
+	# search gap
+	new_slug = None
+	last_row_number = None
+	for new_slug, last_row_number, is_gap in all_slugs.iterator():
+		if is_gap:
 			break
-	return unique_slug
+	else:
+		if last_row_number is not None:
+			last_row_number += 1
+			new_slug = f'{slug}-{last_row_number}'
+	if new_slug is None:
+		new_slug = slug
+
+	setattr(instance, slug_field_name, new_slug)
+	return new_slug
