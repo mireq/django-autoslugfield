@@ -13,7 +13,7 @@ from django.utils.text import slugify
 EMPTY_SLUG = '-'
 SEPARATOR = '-'
 
-ESCAPE_REGEX = re.compile(r'([.\\+*^?$!=|:-\[\](){}<>-])')
+ESCAPE_REGEX = re.compile(r'([.\\+*^?$!=|:\[\](){}<>-])')
 
 
 def regex_escape(text):

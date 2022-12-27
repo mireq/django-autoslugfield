@@ -2,10 +2,14 @@
 from django.test import TestCase
 
 from .models import SimpleModel, CustomTitleModel, RespectToPkModel, RespectToParentModel, RespectToUniqueTogether, CustomReserveModel
-from django_autoslugfield.utils import EMPTY_SLUG, SEPARATOR
+from django_autoslugfield.utils import EMPTY_SLUG, SEPARATOR, regex_escape
 
 
 class TestField(TestCase):
+	def test_simple_regex(self):
+		chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<=>?@[]^_`{|}~ \t\n\r\x0b\x0c\x00\\'
+		self.assertEqual('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\\!"#\\$%&\'\\(\\)\\*\\+,\\-\\./\\:;\\<\\=\\>\\?@\\[\\]\\^_`\\{\\|\\}~ \t\n\r\x0b\x0c\\000\\\\', regex_escape(chars))
+
 	def test_simple(self):
 		# first instance
 		instance = SimpleModel.objects.create(title='Title')
