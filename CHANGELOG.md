@@ -1,3 +1,9 @@
+## 1.0.1 (2022-12-27)
+
+### Fix
+
+- Fixed regex for capitals
+
 ## 1.0.0 (2022-12-25)
 
 ### Feat
