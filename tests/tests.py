@@ -90,3 +90,13 @@ class TestField(TestCase):
 	def test_custom_reserve(self):
 		instance = CustomReserveModel.objects.create(title='0123456789')
 		self.assertEqual('01234567', instance.slug)
+
+	def test_existing_1_prefix(self):
+		instances = [
+			SimpleModel(title='s', slug='s'),
+			SimpleModel(title='s', slug='s-1'),
+			SimpleModel(title='s', slug='s-2'),
+		]
+		SimpleModel.objects.bulk_create(instances)
+		instance = SimpleModel.objects.create(title='s')
+		self.assertEqual('s-3', instance.slug)
