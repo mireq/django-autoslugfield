@@ -1,3 +1,9 @@
+## 1.0.3 (2023-01-04)
+
+### Fix
+
+- Prevent existing slug-1 to cause collision
+
 ## 1.0.2 (2022-12-31)
 
 ## 1.0.1 (2022-12-27)
