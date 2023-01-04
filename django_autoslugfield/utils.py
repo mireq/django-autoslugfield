@@ -109,6 +109,7 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	# search for gaps (filter is not possible with window functions)
 	all_slugs = (queryset
 		.filter(**in_respect_to)
+		.exclude(**{slug_field_name: f'{slug}-1'})
 		.annotate(row_number_=Window(
 			expression=RowNumber(),
 			order_by=[Length(slug_field_name), slug_field_name]
