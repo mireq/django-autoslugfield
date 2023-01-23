@@ -43,5 +43,5 @@ include = ["django_autoslugfield"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.0.3"
+version = "1.0.4"
 tag_format = "$version"
