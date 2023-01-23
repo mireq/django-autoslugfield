@@ -127,6 +127,7 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 			When(Q(**{slug_field_name: F('expected_slug_')}), then=V(False)),
 			default=V(True)
 		))
+		.order_by('row_number_')
 		.values_list('expected_slug_', 'row_number_', 'is_slug_gap')
 	)
 
