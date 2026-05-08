@@ -1,3 +1,9 @@
+## 1.0.5 (2026-05-08)
+
+### Refactor
+
+- Simpler, more robust unique field value generation
+
 ## 1.0.4 (2023-01-23)
 
 ### Fix
