@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
 import re
 
-from django.db import models
-from django.db.models import F, Value as V, Case, When, Q
 from django.db.models.constants import LOOKUP_SEP
-from django.db.models.expressions import Window
-from django.db.models.functions import Length, RowNumber, Concat, Cast
 from django.utils.encoding import force_str
 from django.utils.text import slugify
 
@@ -106,43 +101,18 @@ def unique_slugify(instance, slug_field_name, reserve_chars=5, title_field=None,
 	in_respect_to = {f: get_instance_attribute(instance, f) for f in in_respect_to}
 	in_respect_to[slug_field_query] = slug_regex
 
-	# search for gaps (filter is not possible with window functions)
-	all_slugs = (queryset
+	# find prefixed slugs
+	prefixed_slugs = set(queryset
 		.filter(**in_respect_to)
-		.exclude(**{slug_field_name: f'{slug}-1'})
-		.annotate(row_number_=Window(
-			expression=RowNumber(),
-			order_by=[Length(slug_field_name), slug_field_name]
-		))
-		.annotate(expected_slug_=Case(
-				When(Q(row_number_=1), then=V(slug)),
-				default=Concat(
-					V(slug),
-					V(SEPARATOR),
-					Cast(F('row_number_'), models.CharField(max_length=255))
-				)
-			)
-		)
-		.annotate(is_slug_gap=Case(
-			When(Q(**{slug_field_name: F('expected_slug_')}), then=V(False)),
-			default=V(True)
-		))
-		.order_by('row_number_')
-		.values_list('expected_slug_', 'row_number_', 'is_slug_gap')
+		.values_list(slug_field_name, flat=True)
 	)
 
-	# search gap
-	new_slug = None
-	last_row_number = None
-	for new_slug, last_row_number, is_gap in all_slugs.iterator():
-		if is_gap:
-			break
-	else:
-		if last_row_number is not None:
-			last_row_number += 1
-			new_slug = f'{slug}-{last_row_number}'
-	if new_slug is None:
-		new_slug = slug
+	# find free slot
+	prefix = 1
+	new_slug = slug
+	while new_slug in prefixed_slugs:
+		prefix += 1
+		new_slug = f'{slug}{SEPARATOR}{prefix}'
 
 	setattr(instance, slug_field_name, new_slug)
 	return new_slug
